@@ -1,28 +1,73 @@
 import os
 import tkinter as tk
+import tkinter.filedialog as tkFileDialog
 import pydes as pydes
 
 
 class PwdDocumentItem:
 
     def __init__(self):
-        pass
+        self._userName = ""
+        self._key = ""
+        self._password = ""
+
+    def getUserName(self):
+        return self._userName
+
+    def setUserName(self, userName):
+        self._userName = userName
+
+    def getKey(self):
+        return self._key
+
+    def setKey(self, key):
+        self._key = key
+
+    def getPassword(self):
+        return self._password
+
+    def setPassword(self, password):
+        self._password = password
 
 
 class PwdDocument:
 
     def __init__(self):
         self._pwdItems = []
+        self._fileName = ""
+        self._dirty = True
+
+    def addItem(self, item):
+        self._pwdItems.append(item)
+
+    def readFile(self):
+        self._dirty = False
+
+    def saveFile(self):
+        self._dirty = False
+
+    def setFileName(self, fileName):
+        self._fileName = fileName
+
+    def getFileName(self):
+        return self._fileName
+
+    def isDirty(self):
+        return self._dirty
+
+    def getItems(self):
+        return self._pwdItems
 
 
 class EditItemDialog(tk.Toplevel):
 
-    def __init__(self, readonly):
+    def __init__(self, readonly, pwdItem):
         tk.Toplevel.__init__(self)
         self._readonly = readonly
-        self._keyValue = tk.StringVar()
-        self._userNameValue = tk.StringVar()
-        self._pwdValue = tk.StringVar()
+        self._keyValue = tk.StringVar(pwdItem.getKey())
+        self._userNameValue = tk.StringVar(pwdItem.getUserName())
+        self._pwdValue = tk.StringVar(pwdItem.getPassword())
+        self._pwdItem = pwdItem
         self.grid()
         self.createWidgets()
 
@@ -47,7 +92,7 @@ class EditItemDialog(tk.Toplevel):
 
     def applyChange(self):
         if (not self._readonly):
-            pass
+            self._pwdItem.setKey(self._keyValue.get())
         self.destroy()
 
 
@@ -56,7 +101,7 @@ class Application(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
         self._root = master
-        self._document = None
+        self._document = PwdDocument()
         self.pack()
         self.createWidgets()
 
@@ -83,22 +128,48 @@ class Application(tk.Frame):
         self._itemList.pack()
 
     def newDocument(self):
-        pass
+        # TODO check whether this document is dirty
+        self._document = PwdDocument()
 
     def openDocument(self):
-        pass
+        # TODO check whether this document is dirty
+        options = {}
+        options['defaultextension'] = '.pwd'
+        options['filetypes'] = [('password files', '.pwd')]
+        options['initialdir'] = 'C:\\'
+        options['parent'] = self._root
+        options['title'] = 'Open File'
+        fileName = tkFileDialog.askopenfile(mode='r', **options)
+        if fileName is not None and fileName != "":
+            self._document = PwdDocument()
+            self._document.setFileName(fileName)
+            self._document.readFile()
+            self.UpdateList()
+
+    def UpdateList(self):
+        pwdItems = self._document.getItems()
+        self._itemList.delete(0, tk.END)
+        for item in pwdItems:
+            self._itemList.insert(tk.END, item.getKey())
 
     def saveDocument(self):
-        pass
+        self._document.saveFile()
 
     def newItem(self):
-        pass
+        pwdItem = PwdDocumentItem()
+        EditItemDialog(False, pwdItem)
+        self._document.addItem(pwdItem)
+        self.UpdateList()
 
     def deleteItem(self):
-        pass
+        self.UpdateList()
 
     def openItem(self):
-        openItemDialog = EditItemDialog(True)
+        # get this item
+        pwdItem = None
+        if pwdItem is None:
+            return
+        EditItemDialog(True, pwdItem)
 
 
 def main():
