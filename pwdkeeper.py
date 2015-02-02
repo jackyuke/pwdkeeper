@@ -5,6 +5,7 @@ import pydes as pydes
 
 app = None
 
+
 class PwdDocumentItem:
 
     def __init__(self):
@@ -198,8 +199,22 @@ class Application(tk.Frame):
         EditItemDialog(True, pwdItem)
 
 
+def TestPydes():
+    data = "Pleaseencrypt my data"
+    k = pydes.des("DESCRYPT", pydes.CBC, "\0\0\0\0\0\0\0\0", pad=None,
+        padmode=pydes.PAD_PKCS5)
+    k1 = pydes.des("DESCRYP1", pydes.CBC, "\0\0\0\0\0\0\0\0", pad=None,
+        padmode=pydes.PAD_PKCS5)
+    d = k.encrypt(data)
+    print("Encrypted:")
+    print(d)
+    print("Decrypted: ")
+    print(k1.decrypt(d))
+
+
 def main():
     global app
+    TestPydes()
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
