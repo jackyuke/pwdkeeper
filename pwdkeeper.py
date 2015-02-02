@@ -3,6 +3,7 @@ import tkinter as tk
 import tkinter.filedialog as tkFileDialog
 import pydes as pydes
 
+app = None
 
 class PwdDocumentItem:
 
@@ -45,6 +46,15 @@ class PwdDocument:
 
     def saveFile(self):
         self._dirty = False
+        if self.getFileName() is None or self.getFileName() == "":
+            return
+        pwdFile = open(self.getFileName(), "w")
+        try:
+            for item in self._pwdItems:
+                itemLines = [item.getKey(), item.getUserName(), item.getPassword()]
+                pwdFile.writelines(itemLines)
+        finally:
+            pwdFile.close()
 
     def setFileName(self, fileName):
         self._fileName = fileName
@@ -93,6 +103,7 @@ class EditItemDialog(tk.Toplevel):
     def applyChange(self):
         if (not self._readonly):
             self._pwdItem.setKey(self._keyValue.get())
+            app.updateList()
         self.destroy()
 
 
@@ -125,7 +136,7 @@ class Application(tk.Frame):
 
     def createList(self):
         self._itemList = tk.Listbox(self._root)
-        self._itemList.pack()
+        self._itemList.pack(expand=True, fill="both")
 
     def newDocument(self):
         # TODO check whether this document is dirty
@@ -139,30 +150,39 @@ class Application(tk.Frame):
         options['initialdir'] = 'C:\\'
         options['parent'] = self._root
         options['title'] = 'Open File'
-        fileName = tkFileDialog.askopenfile(mode='r', **options)
+        fileName = tkFileDialog.askopenfilename(**options)
         if fileName is not None and fileName != "":
             self._document = PwdDocument()
             self._document.setFileName(fileName)
             self._document.readFile()
-            self.UpdateList()
+            self.updateList()
 
-    def UpdateList(self):
+    def updateList(self):
         pwdItems = self._document.getItems()
         self._itemList.delete(0, tk.END)
         for item in pwdItems:
             self._itemList.insert(tk.END, item.getKey())
+        self._itemList.update()
 
     def saveDocument(self):
+        if self._document.getFileName() == "":
+            options = {}
+            options['defaultextension'] = '.pwd'
+            options['filetypes'] = [('password files', '.pwd')]
+            options['initialdir'] = 'C:\\'
+            options['parent'] = self._root
+            options['title'] = 'Save File'
+            fileName = tkFileDialog.asksaveasfilename(**options)
+            self._document.setFileName(fileName)
         self._document.saveFile()
 
     def newItem(self):
         pwdItem = PwdDocumentItem()
-        EditItemDialog(False, pwdItem)
         self._document.addItem(pwdItem)
-        self.UpdateList()
+        EditItemDialog(False, pwdItem)
 
     def deleteItem(self):
-        self.UpdateList()
+        self.updateList()
 
     def openItem(self):
         # get this item
@@ -173,6 +193,7 @@ class Application(tk.Frame):
 
 
 def main():
+    global app
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
