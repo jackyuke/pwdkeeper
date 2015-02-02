@@ -52,7 +52,11 @@ class PwdDocument:
         try:
             for item in self._pwdItems:
                 itemLines = [item.getKey(), item.getUserName(), item.getPassword()]
-                pwdFile.writelines(itemLines)
+                writeItemLines = []
+                for line in itemLines:
+                    line = line + "\n"
+                    writeItemLines.append(line)
+                pwdFile.writelines(writeItemLines)
         finally:
             pwdFile.close()
 
@@ -103,6 +107,8 @@ class EditItemDialog(tk.Toplevel):
     def applyChange(self):
         if (not self._readonly):
             self._pwdItem.setKey(self._keyValue.get())
+            self._pwdItem.setUserName(self._userNameValue.get())
+            self._pwdItem.setPassword(self._pwdValue.get())
             app.updateList()
         self.destroy()
 
